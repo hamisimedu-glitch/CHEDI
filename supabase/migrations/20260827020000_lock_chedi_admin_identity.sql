@@ -9,6 +9,17 @@ AS $$
   SELECT lower(coalesce(auth.jwt() ->> 'email', '')) = 'chedifoundation8@gmail.com';
 $$;
 
+UPDATE public.admin_users
+SET role = 'staff'
+WHERE role = 'admin';
+
+INSERT INTO public.admin_users (user_id, display_name, role)
+SELECT id, 'CHEDI administrator', 'admin'
+FROM auth.users
+WHERE lower(email) = 'chedifoundation8@gmail.com'
+ON CONFLICT (user_id) DO UPDATE
+SET display_name = EXCLUDED.display_name, role = 'admin';
+
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
 LANGUAGE sql
