@@ -841,6 +841,10 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
     } else {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (signInError) { setError(signInError.message); setLoading(false); return; }
+      if (email.trim().toLowerCase() === 'chedifoundation8@gmail.com') {
+        const { error: claimError } = await supabase.rpc('claim_chedi_admin');
+        if (claimError) { setError('Administrator access could not be activated. Please contact support.'); setLoading(false); return; }
+      }
       onSuccess();
       return;
     }
