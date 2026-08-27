@@ -65,6 +65,15 @@ a { color: inherit; text-decoration: none; }
 .admin-sidebar-header { display: flex; align-items: center; gap: 10px; padding: 0 22px 24px; border-bottom: 1px solid #1f4a3a; font-size: 13px; font-weight: 700; color: #e8f0e4; }
 .admin-sidebar-logo { height: 38px; width: 38px; object-fit: contain; }
 @media (max-width: 640px) { .story-feature video { height: 270px; } }
+.hero-image { animation: hero-image-in .7s ease-out; }
+.hero-controls { display: flex; gap: 7px; margin-left: 15px; }
+.hero-controls button, .hero-dots button { border: 1px solid rgba(255,255,255,.55); background: rgba(10,40,31,.25); color: white; display: grid; place-items: center; }
+.hero-controls button { width: 30px; height: 30px; border-radius: 50%; }
+.hero-controls button:hover, .hero-dots button:hover, .hero-dots button.active { background: var(--orange); border-color: var(--orange); }
+.hero-dots { position: absolute; z-index: 2; left: calc((100% - min(1160px, calc(100% - 64px))) / 2); bottom: 36px; display: flex; gap: 7px; }
+.hero-dots button { width: 8px; height: 8px; padding: 0; border-radius: 50%; }
+@keyframes hero-image-in { from { opacity: .45; transform: scale(1.05); } to { opacity: 1; transform: scale(1.02); } }
+@media (max-width: 640px) { .hero-dots { left: 18px; bottom: 69px; }.hero-note { display: flex; flex-wrap: wrap; max-width: calc(100% - 36px); }.hero-controls { margin-left: 0; width: 100%; margin-top: 8px; } }
 .story-expanded { margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line); animation: reveal-content .35s ease-out; }
 .story-expanded-images { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 18px; }
 .story-expanded-images img { width: 100%; height: 78px; object-fit: cover; display: block; }

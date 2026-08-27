@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import {
   ArrowRight,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Facebook,
   HeartHandshake,
   Instagram,
@@ -39,6 +41,12 @@ const communityImage = '/CHEDI1.jpg';
 const cleanUpImage = '/CHEDI2.jpg';
 const studentImage = '/CHEDI4.jpg';
 const wasteImages = ['/CHEDI%20WASTE%201.jpg', '/CHEDI%20WASTE2.jpg', '/CHEDI%20WASTE3.jpg', '/CHEDI%20WASTE4.jpg'];
+const heroSlides = [
+  { image: heroImage, label: 'Our community, our strength' },
+  { image: communityImage, label: 'Community-led health action' },
+  { image: wasteImages[0], label: 'Cleaner spaces, healthier homes' },
+  { image: studentImage, label: 'Hope in every classroom' },
+];
 
 const programs: Program[] = [
   { title: 'Community Health', description: 'Health education, disease prevention, screenings, and maternal-child nutrition support led by local health promoters.', color: 'green', icon: HeartHandshake, image: '/CHEDI2.jpg', details: 'Community health promoters meet residents where they are, sharing trusted information, connecting families to care, and supporting healthier daily choices.' },
@@ -67,6 +75,8 @@ function App() {
   const [publicNews, setPublicNews] = useState<{ title: string; category: string; published_at: string | null }[]>([]);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [heroSlide, setHeroSlide] = useState(0);
+  const [carouselPaused, setCarouselPaused] = useState(false);
   const [storyExpanded, setStoryExpanded] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<string | null>(null);
 
@@ -79,6 +89,12 @@ function App() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
     return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, []);
+
+  useEffect(() => {
+    if (carouselPaused) return;
+    const interval = window.setInterval(() => setHeroSlide((current) => (current + 1) % heroSlides.length), 5500);
+    return () => window.clearInterval(interval);
+  }, [carouselPaused]);
 
   useEffect(() => {
     const finishLoading = () => setIsLoading(false);
@@ -135,8 +151,8 @@ function App() {
       </header>
 
       <main>
-        <section className="hero">
-          <div className="hero-image" style={{ backgroundImage: `url(${heroImage})` }} />
+        <section className="hero" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}>
+          <div key={heroSlide} className="hero-image" style={{ backgroundImage: `url(${heroSlides[heroSlide].image})` }} role="img" aria-label={heroSlides[heroSlide].label} />
           <div className="hero-overlay" />
           <div className="container hero-content">
             <p className="eyebrow light"><span /> Community-led. Dignity-first.</p>
@@ -144,7 +160,8 @@ function App() {
             <p className="hero-copy">We are a grassroots community organization working with residents of Kibera to build healthier, safer and more hopeful futures—together.</p>
             <div className="hero-actions"><a className="button button-primary" href="#who-we-are">Discover our work <ArrowRight size={18} /></a><button className="play-button" onClick={() => setModal('contact')}><span><Play size={15} fill="currentColor" /></span> See our story</button></div>
           </div>
-          <div className="hero-note"><span className="hero-note-line" /><strong>01</strong><span>of 04 &nbsp; / &nbsp; Our community, our strength</span></div>
+          <div className="hero-note"><span className="hero-note-line" /><strong>{String(heroSlide + 1).padStart(2, '0')}</strong><span>of {String(heroSlides.length).padStart(2, '0')} &nbsp; / &nbsp; {heroSlides[heroSlide].label}</span><div className="hero-controls"><button onClick={() => setHeroSlide((heroSlide - 1 + heroSlides.length) % heroSlides.length)} aria-label="Previous homepage image"><ChevronLeft size={17} /></button><button onClick={() => setHeroSlide((heroSlide + 1) % heroSlides.length)} aria-label="Next homepage image"><ChevronRight size={17} /></button></div></div>
+          <div className="hero-dots" role="tablist" aria-label="Homepage images">{heroSlides.map((slide, index) => <button key={slide.image} className={heroSlide === index ? 'active' : ''} onClick={() => setHeroSlide(index)} role="tab" aria-label={`Show image ${index + 1}: ${slide.label}`} aria-selected={heroSlide === index} />)}</div>
         </section>
 
         <section className="intro-section" id="who-we-are">
