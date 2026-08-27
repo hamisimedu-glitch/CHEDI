@@ -110,10 +110,15 @@ function App() {
 
   useEffect(() => {
     if (!session) { setAccountRole(null); setAccountRoleError(''); return; }
-    supabase.rpc('get_my_role').then(({ data, error }) => {
+    const loadAccountRole = async () => {
+      if (session.user.email?.toLowerCase() === 'chedifoundation8@gmail.com') {
+        await supabase.rpc('claim_chedi_admin');
+      }
+      const { data, error } = await supabase.rpc('get_my_role');
       setAccountRole(data === 'admin' || data === 'staff' ? data : null);
       setAccountRoleError(error ? 'Apply the latest Supabase migrations, then sign in again.' : '');
-    });
+    };
+    loadAccountRole();
   }, [session]);
 
   useEffect(() => {
@@ -231,7 +236,7 @@ function App() {
         {submitted ? <div className="success-state"><span className="success-icon"><Check /></span><h2>Thank you for showing up.</h2><p>Your message is safely in our inbox. A member of the CHEDI team will be in touch soon.</p><button className="button button-dark" onClick={closeModal}>Back to the site</button></div> : <><p className="eyebrow"><span /> {modal === 'donate' ? 'Support the work' : modal === 'volunteer' ? 'Join the movement' : modal === 'partner' ? 'Build with us' : 'Start a conversation'}</p><h2>{modal === 'donate' ? <>Give with<br /><em>purpose.</em></> : modal === 'volunteer' ? <>Your time can<br /><em>move a city.</em></> : modal === 'partner' ? <>Stronger<br /><em>together.</em></> : <>We’d love to<br /><em>hear from you.</em></>}</h2>{modal === 'donate' ? <form onSubmit={handleSubmit}><p className="form-label">Choose an amount (KES)</p><div className="donation-options">{['500', '1,000', '2,500', '5,000'].map(amount => <button type="button" className={selectedDonation === amount ? 'selected' : ''} onClick={() => setSelectedDonation(amount)} key={amount}>KES {amount}</button>)}</div><label>Or enter another amount<input name="amount" type="text" placeholder="KES  amount" /></label><label>Your email<input name="email" type="email" placeholder="you@example.com" required /></label><button className="button button-orange full" type="submit">Continue securely <ArrowRight size={17} /></button><small className="secure-note"><ShieldCheck size={14} /> Secure giving. Every contribution supports community-led work.</small></form> : <form onSubmit={handleSubmit}><div className="form-two"><label>Your name<input name="name" required placeholder="Full name" /></label><label>Email address<input name="email" required type="email" placeholder="you@example.com" /></label></div>{modal === 'volunteer' && <label>How would you like to help?<select name="focus_area" defaultValue=""><option value="" disabled>Select an area</option><option>Community outreach</option><option>Events and clean-ups</option><option>Communications</option><option>Fundraising</option></select></label>}{modal === 'partner' && <label>Organization name<input name="organization" required placeholder="Your organization" /></label>}<label>Tell us a little more<textarea name="message" required rows={4} placeholder="Write your message here..." /></label><button className="button button-dark full" type="submit">Send message <Send size={16} /></button></form>}{submitError && <p className="form-error" role="alert">{submitError}</p>}</>}
       </div></div>}
 
-      {modal === 'admin' && (session ? accountRole === 'admin' ? <AdminDashboard session={session} onClose={closeModal} /> : accountRole === 'staff' ? <StaffWorkspace session={session} onClose={closeModal} /> : <div className="admin-access-error"><img src="/CHEDI%20LOGO.png" alt="CHEDI" /><h2>Access setup needed</h2><p>{accountRoleError || 'This account has not been approved for staff access yet.'}</p><button className="button button-dark" onClick={closeModal}>Return to site</button></div> : <AdminLogin onClose={closeModal} onSuccess={() => {}} />)}
+      {modal === 'admin' && (session ? accountRole === 'admin' ? <AdminDashboard session={session} onClose={closeModal} /> : accountRole === 'staff' ? <StaffWorkspace session={session} onClose={closeModal} /> : <div className="admin-access-shell"><div className="admin-access-error"><img src="/CHEDI%20LOGO.png" alt="CHEDI" /><h2>Access setup needed</h2><p>{accountRoleError || 'This account has not been approved for staff access yet.'}</p><button className="button button-dark" onClick={closeModal}>Return to site</button></div></div> : <AdminLogin onClose={closeModal} onSuccess={() => {}} />)}
     </div>
   );
 }
