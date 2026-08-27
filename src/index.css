@@ -257,16 +257,3 @@ a { color: inherit; text-decoration: none; }
 	.modal-backdrop { padding: 12px; }
 	.modal { max-height: 94vh; padding: 39px 18px 25px; }
 }
-.hero-image { background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #18342e; }
-.impact-image-wrap img, .story-feature video, .story-feature img, .gallery-item img, .program-card-image, .story-expanded-images img { object-fit: contain; background: #18342e; }
-.intro-video { object-fit: contain; background: #18342e; }
-.impact-image-wrap img { background: #eff3e9; }
-.gallery-item img, .program-card-image, .story-expanded-images img { background: #dfe9df; }
-@media (max-width: 640px) {
-	.hero { min-height: 650px; }
-	.intro-video { height: 260px; }
-	.impact-image-wrap img { height: 420px; }
-	.story-feature video, .story-feature img { height: 300px; }
-	.program-card-image { height: 180px; }
-	.story-expanded-images img { height: 130px; }
-}
