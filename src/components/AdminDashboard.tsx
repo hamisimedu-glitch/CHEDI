@@ -17,12 +17,13 @@ import {
   Trash2,
   TrendingUp,
   Users,
+  UserPlus,
   X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 
-type AdminTab = 'overview' | 'stories' | 'gallery' | 'applications' | 'messages' | 'donations';
+type AdminTab = 'overview' | 'stories' | 'gallery' | 'applications' | 'messages' | 'donations' | 'staff';
 
 type NewsItem = {
   id: string;
@@ -77,6 +78,14 @@ type Donation = {
   created_at: string;
 };
 
+type StaffRequest = {
+  id: string;
+  email: string;
+  display_name: string;
+  status: string;
+  created_at: string;
+};
+
 const CATEGORIES = ['Field note', 'Upcoming event', 'CHEDI journal', 'Impact story', 'Announcement'];
 const GALLERY_CATEGORIES = ['Community', 'Health', 'Environment', 'Education', 'Events'];
 const APP_STATUSES = ['new', 'reviewing', 'contacted', 'closed'];
@@ -100,6 +109,11 @@ export default function AdminDashboard({ session, onClose }: AdminDashboardProps
   const [adminName, setAdminName] = useState('CHEDI staff');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ stories: 0, gallery: 0, applications: 0, messages: 0, donations: 0, pendingApps: 0, pendingMsgs: 0, totalDonations: 0 });
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.rpc('is_admin').then(({ data }) => setAuthorized(data === true));
+  }, [session.user.id]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -138,6 +152,11 @@ export default function AdminDashboard({ session, onClose }: AdminDashboardProps
     onClose();
   };
 
+  if (authorized === false) {
+    return <div className="admin-login-shell"><div className="admin-login-card"><img src="/CHEDI%20LOGO.png" alt="CHEDI" className="admin-login-logo" /><p className="eyebrow"><span /> Access pending</p><h2>Thanks for <em>signing up.</em></h2><p className="admin-login-sub">Your account is not an administrator account. Ask the CHEDI administrator to approve your staff access before signing in here.</p><button className="button button-green full" onClick={handleSignOut}>Return to the site</button></div></div>;
+  }
+  if (authorized !== true) return <div className="admin-loading">Checking access...</div>;
+
   const initials = adminName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'CH';
 
   const navItems: { key: AdminTab; label: string; icon: typeof Inbox; badge?: number }[] = [
@@ -147,6 +166,7 @@ export default function AdminDashboard({ session, onClose }: AdminDashboardProps
     { key: 'applications', label: 'Applications', icon: Users, badge: stats.pendingApps },
     { key: 'messages', label: 'Messages', icon: Mail, badge: stats.pendingMsgs },
     { key: 'donations', label: 'Donations', icon: HeartHandshake },
+    { key: 'staff', label: 'Staff requests', icon: UserPlus },
   ];
 
   return (
@@ -206,11 +226,44 @@ export default function AdminDashboard({ session, onClose }: AdminDashboardProps
             <MessagesTab />
           ) : tab === 'donations' ? (
             <DonationsTab />
+          ) : tab === 'staff' ? (
+            <StaffRequestsTab />
           ) : null}
         </div>
       </div>
     </div>
   );
+}
+
+export function StaffWorkspace({ session, onClose }: AdminDashboardProps) {
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    onClose();
+  };
+
+  return <div className="admin-login-shell"><div className="admin-login-card"><img src="/CHEDI%20LOGO.png" alt="CHEDI" className="admin-login-logo" /><p className="eyebrow"><span /> Staff workspace</p><h2>Welcome to <em>CHEDI.</em></h2><p className="admin-login-sub">Your staff account has been approved. Content administration remains available only to the CHEDI administrator.</p><button className="button button-green full" onClick={handleSignOut}>Sign out</button></div></div>;
+}
+
+function StaffRequestsTab() {
+  const [requests, setRequests] = useState<StaffRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from('staff_requests').select('id, email, display_name, status, created_at').order('created_at', { ascending: false });
+    setRequests(data ?? []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const updateRequest = async (id: string, action: 'approve_staff_request' | 'decline_staff_request') => {
+    const { error } = await supabase.rpc(action, { request_id: id });
+    if (error) window.alert(error.message);
+    await load();
+  };
+
+  return <div className="admin-list-view"><div className="admin-list-header"><h3>Staff access requests</h3></div>{loading ? <div className="admin-loading">Loading staff requests...</div> : requests.length === 0 ? <div className="admin-empty"><UserPlus size={32} /><p>No staff requests yet.</p></div> : <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>{requests.map(request => <tr key={request.id}><td className="admin-cell-title">{request.display_name}</td><td className="admin-cell-email">{request.email}</td><td><span className="admin-pill">{request.status}</span></td><td className="admin-cell-date">{formatDate(request.created_at)}</td><td className="admin-cell-actions">{request.status === 'pending' && <><button className="button button-green" onClick={() => updateRequest(request.id, 'approve_staff_request')}><Check size={14} /> Approve</button><button className="button button-outline-dark" onClick={() => updateRequest(request.id, 'decline_staff_request')}>Decline</button></>}</td></tr>)}</tbody></table></div>}</div>;
 }
 
 function OverviewTab({ stats, onNavigate }: { stats: { stories: number; gallery: number; applications: number; messages: number; donations: number; pendingApps: number; pendingMsgs: number; totalDonations: number }; onNavigate: (t: AdminTab) => void }) {
@@ -760,7 +813,8 @@ type AdminLoginProps = {
 };
 
 export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'request'>('login');
+  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -771,18 +825,18 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
     setError('');
     setLoading(true);
 
-    if (mode === 'signup') {
+    if (mode === 'request') {
       const { data, error: signUpError } = await supabase.auth.signUp({ email: email.trim(), password });
       if (signUpError) { setError(signUpError.message); setLoading(false); return; }
-      if (data.user) {
-        const { error: bootstrapError } = await supabase.rpc('bootstrap_first_admin');
-        if (bootstrapError) {
-          setError('Account created, but an admin already exists. Ask an existing admin to add you.');
-          setMode('login');
-        } else {
-          onSuccess();
-          return;
-        }
+      if (data.user && data.session) {
+        const { error: requestError } = await supabase.from('staff_requests').insert({ user_id: data.user.id, email: email.trim(), display_name: displayName.trim() || 'CHEDI staff' });
+        if (requestError) { setError(requestError.message); setLoading(false); return; }
+        await supabase.auth.signOut();
+        setError('Request submitted. The administrator must approve your staff access before you can sign in.');
+        setMode('login');
+      } else {
+        setError('Account created. Confirm your email, then ask the administrator to approve your staff access.');
+        setMode('login');
       }
     } else {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
@@ -799,13 +853,16 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
         <button className="modal-close" onClick={onClose} aria-label="Close"><X size={20} /></button>
         <img src="/CHEDI%20LOGO.png" alt="CHEDI" className="admin-login-logo" />
         <p className="eyebrow"><span /> Staff area</p>
-        <h2>{mode === 'login' ? <>Welcome <em>back.</em></> : <>Create your <em>account.</em></>}</h2>
+        <h2>{mode === 'login' ? <>Welcome <em>back.</em></> : <>Request <em>access.</em></>}</h2>
         <p className="admin-login-sub">
           {mode === 'login'
-            ? 'Sign in to manage stories, gallery, and submissions.'
-            : 'The first account created becomes the admin. Additional staff must be invited by an existing admin.'}
+            ? 'Only the CHEDI administrator and approved staff can sign in here.'
+            : 'Create a staff account request. The administrator will review and approve it.'}
         </p>
         <form onSubmit={handleSubmit} className="admin-login-form">
+          {mode === 'request' && <label>Your name
+            <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Full name" required />
+          </label>}
           <label>Email address
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@chedi.org" required />
           </label>
@@ -814,11 +871,11 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
           </label>
           {error && <p className="form-error" role="alert">{error}</p>}
           <button type="submit" className="button button-green full" disabled={loading}>
-            {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'}
+            {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Request staff access'}
           </button>
         </form>
-        <button className="admin-login-toggle" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}>
-          {mode === 'login' ? 'No account? Create one' : 'Already have an account? Sign in'}
+        <button className="admin-login-toggle" onClick={() => { setMode(mode === 'login' ? 'request' : 'login'); setError(''); }}>
+          {mode === 'login' ? 'Need staff access? Submit a request' : 'Already have an account? Sign in'}
         </button>
       </div>
     </div>
