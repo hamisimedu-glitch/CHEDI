@@ -227,6 +227,18 @@ a { color: inherit; text-decoration: none; }
 .admin-detail-message strong { display: block; font-size: 13px; color: var(--ink); margin-bottom: 8px; }
 .admin-detail-message p { font-size: 13px; line-height: 1.7; color: #658079; background: #f5f7f1; padding: 14px 16px; border-radius: 6px; margin: 0; }
 .rotate-180 { transform: rotate(180deg); }
+.donation-form { display: flex; flex-direction: column; gap: 16px; }
+.donation-form + .success-state, .donation-form + p { display: none; }
+.modal .donation-form ~ form { display: none; }
+.donation-prompt { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-left: 3px solid var(--orange); background: #fff3df; color: var(--ink); }
+.donation-prompt strong { font-family: 'Libre Baskerville', serif; font-size: 16px; font-weight: 400; }
+.donation-prompt span { color: #658079; font-size: 12px; line-height: 1.55; }
+.donation-frequency { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.donation-frequency button { border: 1px solid #cfddd3; background: white; color: #527066; padding: 11px 8px; font-size: 11px; font-weight: 700; }
+.donation-frequency button.selected { border-color: var(--green); background: var(--green); color: white; }
+.payment-prompt { display: flex; align-items: flex-start; gap: 8px; margin: -5px 0 0; padding: 11px 12px; background: #eef5ef; color: #537067; font-size: 11px; line-height: 1.55; }
+.optional-label { color: #91a29a; font-weight: 400; }
+@media (max-width: 640px) { .donation-frequency button { min-height: 48px; }.donation-prompt { padding: 13px; }.donation-form .form-two { grid-template-columns: 1fr; } }
 
 /* Admin responsive */
 @media (max-width: 900px) { .admin-sidebar { width: 64px; } .admin-sidebar-header span, .admin-nav-item span:not(.admin-nav-badge) { display: none; } .admin-nav-item { justify-content: center; padding: 12px; } .admin-signout span { display: none; } .admin-signout { justify-content: center; } .admin-search-bar input { width: 160px; } }

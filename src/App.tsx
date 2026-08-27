@@ -4,6 +4,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Building2,
+  CreditCard,
   Facebook,
   HeartHandshake,
   Instagram,
@@ -16,6 +18,7 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Smartphone,
   Music2,
   UsersRound,
   X,
@@ -64,6 +67,19 @@ const gallery = [
 
 function Logo() {
   return <a href="#top" className="logo" aria-label="CHEDI home"><img className="chedi-logo" src="/CHEDI%20LOGO.png" alt="CHEDI — Community Health, Environment & Dignity Initiative" /></a>;
+}
+
+type DonationFormProps = {
+  selectedDonation: string;
+  setSelectedDonation: (amount: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+function DonationForm({ selectedDonation, setSelectedDonation, onSubmit }: DonationFormProps) {
+  const [paymentMethod, setPaymentMethod] = useState('mpesa');
+  const [frequency, setFrequency] = useState('one_time');
+
+  return <form onSubmit={onSubmit} className="donation-form"><div className="donation-prompt"><strong>Choose your impact.</strong><span>Every gift helps CHEDI keep community-led health, dignity and environmental action moving.</span></div><div className="donation-frequency" role="group" aria-label="Donation frequency"><button type="button" className={frequency === 'one_time' ? 'selected' : ''} onClick={() => setFrequency('one_time')}>One-time gift</button><button type="button" className={frequency === 'monthly' ? 'selected' : ''} onClick={() => setFrequency('monthly')}>Give monthly</button></div><p className="form-label">Choose an amount (KES)</p><div className="donation-options">{['500', '1,000', '2,500', '5,000'].map(amount => <button type="button" className={selectedDonation === amount ? 'selected' : ''} onClick={() => setSelectedDonation(amount)} key={amount}>KES {amount}</button>)}</div><label>Or enter another amount<input name="amount" type="number" min="1" max="10000000" inputMode="numeric" placeholder="Enter amount" /></label><div className="form-two"><label>Your name<input name="name" type="text" placeholder="Full name" required /></label><label>Email address<input name="email" type="email" placeholder="you@example.com" required /></label></div><label>Payment method<select name="payment_method" value={paymentMethod} onChange={event => setPaymentMethod(event.target.value)}><option value="mpesa">M-Pesa</option><option value="card">Debit or credit card</option><option value="bank_transfer">Bank transfer</option></select></label>{paymentMethod === 'mpesa' && <label>M-Pesa phone number<input name="phone" type="tel" inputMode="tel" placeholder="07XX XXX XXX" pattern="(?:\+?254|0)7\d{8}" required /></label>}{paymentMethod === 'bank_transfer' && <p className="payment-prompt"><Building2 size={17} /> After submitting, CHEDI will send bank transfer instructions to your email.</p>}{paymentMethod === 'card' && <p className="payment-prompt"><CreditCard size={17} /> You will receive a secure card-payment follow-up from CHEDI.</p>}<label>Message <span className="optional-label">(optional)</span><textarea name="message" rows={3} placeholder="Tell us what you would like your gift to support..." /></label><input type="hidden" name="frequency" value={frequency} /><input type="hidden" name="payment_method" value={paymentMethod} /><button className="button button-orange full" type="submit">Continue securely <ArrowRight size={17} /></button><small className="secure-note"><ShieldCheck size={14} /> Your details are used only to coordinate this donation.</small></form>;
 }
 
 function App() {
@@ -125,9 +141,13 @@ function App() {
     const message = String(form.get('message') ?? '').trim();
     let error: { message: string } | null = null;
     if (modal === 'donate') {
-      const amount = Number(String(form.get('amount') ?? selectedDonation).replace(/,/g, ''));
+      const amountInput = String(form.get('amount') ?? '').trim();
+      const amount = Number((amountInput || selectedDonation).replace(/,/g, ''));
       if (!Number.isInteger(amount) || amount < 1) { setSubmitError('Please enter a valid amount.'); return; }
-      ({ error } = await supabase.from('donations').insert({ donor_email: email, amount_kes: amount, status: 'pledged' }));
+      const paymentMethod = String(form.get('payment_method') ?? 'mpesa');
+      const donorPhone = String(form.get('phone') ?? '').trim();
+      if (paymentMethod === 'mpesa' && !/^((\+?254)|0)7\d{8}$/.test(donorPhone.replace(/\s/g, ''))) { setSubmitError('Enter a valid M-Pesa number, for example 0704 827 013.'); return; }
+      ({ error } = await supabase.from('donations').insert({ donor_name: name, donor_email: email, donor_phone: donorPhone || null, amount_kes: amount, payment_method: paymentMethod, frequency: String(form.get('frequency') ?? 'one_time'), donor_message: message || null, status: 'pledged' }));
     } else if (modal === 'volunteer' || modal === 'partner') {
       ({ error } = await supabase.from('applications').insert({ application_type: modal, name, email, organization: String(form.get('organization') ?? '').trim() || null, focus_area: String(form.get('focus_area') ?? '').trim() || null, message }));
     } else if (modal === 'contact') {
@@ -203,6 +223,7 @@ function App() {
 
       {modal && modal !== 'admin' && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><div className="modal" role="dialog" aria-modal="true">
         <button className="modal-close" onClick={closeModal} aria-label="Close"><X size={20} /></button>
+        {modal === 'donate' && <DonationForm selectedDonation={selectedDonation} setSelectedDonation={setSelectedDonation} onSubmit={handleSubmit} />}
         {submitted ? <div className="success-state"><span className="success-icon"><Check /></span><h2>Thank you for showing up.</h2><p>Your message is safely in our inbox. A member of the CHEDI team will be in touch soon.</p><button className="button button-dark" onClick={closeModal}>Back to the site</button></div> : <><p className="eyebrow"><span /> {modal === 'donate' ? 'Support the work' : modal === 'volunteer' ? 'Join the movement' : modal === 'partner' ? 'Build with us' : 'Start a conversation'}</p><h2>{modal === 'donate' ? <>Give with<br /><em>purpose.</em></> : modal === 'volunteer' ? <>Your time can<br /><em>move a city.</em></> : modal === 'partner' ? <>Stronger<br /><em>together.</em></> : <>We’d love to<br /><em>hear from you.</em></>}</h2>{modal === 'donate' ? <form onSubmit={handleSubmit}><p className="form-label">Choose an amount (KES)</p><div className="donation-options">{['500', '1,000', '2,500', '5,000'].map(amount => <button type="button" className={selectedDonation === amount ? 'selected' : ''} onClick={() => setSelectedDonation(amount)} key={amount}>KES {amount}</button>)}</div><label>Or enter another amount<input name="amount" type="text" placeholder="KES  amount" /></label><label>Your email<input name="email" type="email" placeholder="you@example.com" required /></label><button className="button button-orange full" type="submit">Continue securely <ArrowRight size={17} /></button><small className="secure-note"><ShieldCheck size={14} /> Secure giving. Every contribution supports community-led work.</small></form> : <form onSubmit={handleSubmit}><div className="form-two"><label>Your name<input name="name" required placeholder="Full name" /></label><label>Email address<input name="email" required type="email" placeholder="you@example.com" /></label></div>{modal === 'volunteer' && <label>How would you like to help?<select name="focus_area" defaultValue=""><option value="" disabled>Select an area</option><option>Community outreach</option><option>Events and clean-ups</option><option>Communications</option><option>Fundraising</option></select></label>}{modal === 'partner' && <label>Organization name<input name="organization" required placeholder="Your organization" /></label>}<label>Tell us a little more<textarea name="message" required rows={4} placeholder="Write your message here..." /></label><button className="button button-dark full" type="submit">Send message <Send size={16} /></button></form>}{submitError && <p className="form-error" role="alert">{submitError}</p>}</>}
       </div></div>}
 
