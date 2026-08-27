@@ -1,6 +1,16 @@
 -- Keep one administrator identity. Set this account's password in Supabase Auth
 -- directly; credentials must never be stored in application code or migrations.
 
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  display_name text NOT NULL DEFAULT 'CHEDI staff',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.admin_users
+  ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'staff'
+  CHECK (role IN ('admin', 'staff'));
+
 CREATE OR REPLACE FUNCTION public.is_chedi_admin_email()
 RETURNS boolean
 LANGUAGE sql
