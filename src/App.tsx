@@ -28,6 +28,8 @@ type Program = {
   description: string;
   color: string;
   icon: typeof HeartHandshake;
+  image: string;
+  details: string;
 };
 
 type ModalType = 'donate' | 'volunteer' | 'partner' | 'contact' | 'admin' | null;
@@ -36,12 +38,13 @@ const heroImage = '/CHEDI3.jpg';
 const communityImage = '/CHEDI1.jpg';
 const cleanUpImage = '/CHEDI2.jpg';
 const studentImage = '/CHEDI4.jpg';
+const wasteImages = ['/CHEDI%20WASTE%201.jpg', '/CHEDI%20WASTE2.jpg', '/CHEDI%20WASTE3.jpg', '/CHEDI%20WASTE4.jpg'];
 
 const programs: Program[] = [
-  { title: 'Community Health', description: 'Health education, disease prevention, screenings, and maternal-child nutrition support led by local health promoters.', color: 'green', icon: HeartHandshake },
-  { title: 'Environmental Action', description: 'Clean-up campaigns, door-to-door waste collection, recycling awareness, and conservation for a healthier home.', color: 'blue', icon: Leaf },
-  { title: 'Menstrual Dignity', description: 'Safe spaces, menstrual health education, sanitary products, and advocacy for adolescent girls and young mothers.', color: 'orange', icon: Sparkles },
-  { title: 'WASH & Hygiene', description: 'Practical household sanitation, handwashing promotion, and water, sanitation and hygiene education.', color: 'teal', icon: ShieldCheck },
+  { title: 'Community Health', description: 'Health education, disease prevention, screenings, and maternal-child nutrition support led by local health promoters.', color: 'green', icon: HeartHandshake, image: '/CHEDI2.jpg', details: 'Community health promoters meet residents where they are, sharing trusted information, connecting families to care, and supporting healthier daily choices.' },
+  { title: 'Environmental Action', description: 'Clean-up campaigns, door-to-door waste collection, recycling awareness, and conservation for a healthier home.', color: 'blue', icon: Leaf, image: wasteImages[0], details: 'Our waste collection work helps keep shared spaces safer through community clean-ups, household collection, sorting awareness, and practical environmental action.' },
+  { title: 'Menstrual Dignity', description: 'Safe spaces, menstrual health education, sanitary products, and advocacy for adolescent girls and young mothers.', color: 'orange', icon: Sparkles, image: '/CHEDI1.jpg', details: 'We create respectful spaces where girls and young mothers can access accurate information, practical support, and the confidence to speak about menstrual health.' },
+  { title: 'WASH & Hygiene', description: 'Practical household sanitation, handwashing promotion, and water, sanitation and hygiene education.', color: 'teal', icon: ShieldCheck, image: wasteImages[1], details: 'WASH activities connect cleaner surroundings with healthier households through hygiene education, sanitation habits, and community-led waste reduction.' },
 ];
 
 const gallery = [
@@ -63,6 +66,9 @@ function App() {
   const [submitError, setSubmitError] = useState('');
   const [publicNews, setPublicNews] = useState<{ title: string; category: string; published_at: string | null }[]>([]);
   const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [storyExpanded, setStoryExpanded] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -72,6 +78,14 @@ function App() {
     supabase.auth.getSession().then(({ data }) => { if (mounted) setSession(data.session); });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
     return () => { mounted = false; listener.subscription.unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    const finishLoading = () => setIsLoading(false);
+    if (document.readyState === 'complete') finishLoading();
+    else window.addEventListener('load', finishLoading);
+    const fallback = window.setTimeout(finishLoading, 1200);
+    return () => { window.removeEventListener('load', finishLoading); window.clearTimeout(fallback); };
   }, []);
 
   const closeModal = () => {
@@ -100,6 +114,8 @@ function App() {
     if (error) { console.error('CHEDI form submission failed', error); setSubmitError('We could not send that just now. Please try again.'); return; }
     setSubmitted(true);
   };
+
+  if (isLoading) return <div className="site-loader" role="status" aria-label="Loading CHEDI"><img src="/CHEDI%20LOGO.png" alt="" /><span /></div>;
 
   return (
     <div id="top" className="site-shell">
@@ -134,7 +150,7 @@ function App() {
         <section className="intro-section" id="who-we-are">
           <div className="container intro-grid">
             <div className="intro-heading"><p className="eyebrow"><span /> Who we are</p><h2>Change starts<br /><em>from within.</em></h2><div className="line-accent" /></div>
-            <div className="intro-copy"><p className="lead">CHEDI is a grassroots Community-Based Organization founded by passionate community members and frontline Community Health Promoters in Kibera, Nairobi.</p><p>We believe lasting change begins within communities. By putting local knowledge, skills and leadership at the center, we create practical solutions that respond directly to real needs on the ground.</p><a className="text-link" href="#approach">Read our story <ArrowRight size={16} /></a></div>
+            <div className="intro-copy"><p className="lead">CHEDI is a grassroots Community-Based Organization founded by passionate community members and frontline Community Health Promoters in Kibera, Nairobi.</p><p>We believe lasting change begins within communities. By putting local knowledge, skills and leadership at the center, we create practical solutions that respond directly to real needs on the ground.</p><button className="text-link text-button" onClick={() => setStoryExpanded(!storyExpanded)} aria-expanded={storyExpanded}> {storyExpanded ? 'Close our story' : 'Read our story'} <ArrowRight size={16} className={storyExpanded ? 'rotate-180' : ''} /></button>{storyExpanded && <div className="story-expanded"><div className="story-expanded-images">{wasteImages.map((image, index) => <img src={image} alt={`CHEDI waste collection activity ${index + 1}`} key={image} />)}</div><p>Our work is powered by local leadership. Six community health promoters and nine community members, including youth, bring practical knowledge, energy and accountability to every initiative.</p><p>From waste collection and clean-up activities to health education and dignity programs, we listen first and build solutions with the people who live the reality every day.</p></div>}</div>
           </div>
         </section>
 
@@ -142,7 +158,7 @@ function App() {
 
         <section className="program-section" id="programs">
           <div className="container"><div className="section-heading-row"><div><p className="eyebrow"><span /> What we do</p><h2>Practical action.<br /><em>Lasting change.</em></h2></div><p className="section-intro">Across eight strategic pillars, we partner with communities to turn everyday challenges into opportunities for wellbeing, resilience and growth.</p></div>
-            <div className="program-grid">{programs.map(({ title, description, color, icon: Icon }, index) => <article className={`program-card ${color}`} key={title}><div className="program-top"><span className="program-number">0{index + 1}</span><span className="program-icon"><Icon size={23} /></span></div><h3>{title}</h3><p>{description}</p><a href="#impact" aria-label={`Learn more about ${title}`}><ArrowRight size={17} /></a></article>)}</div>
+            <div className="program-grid">{programs.map(({ title, description, color, icon: Icon, image, details }, index) => <article className={`program-card ${color}`} key={title}><img className="program-card-image" src={image} alt={`${title} activity`} /><div className="program-card-content"><div className="program-top"><span className="program-number">0{index + 1}</span><span className="program-icon"><Icon size={23} /></span></div><h3>{title}</h3><p>{description}</p><button className="program-more" onClick={() => setSelectedProgram(selectedProgram === title ? null : title)} aria-label={`${selectedProgram === title ? 'Hide' : 'Show'} more details about ${title}`} aria-expanded={selectedProgram === title}><ArrowRight size={17} className={selectedProgram === title ? 'rotate-180' : ''} /></button></div>{selectedProgram === title && <div className="program-details"><strong>{title}</strong><p>{details}</p></div>}</article>)}</div>
             <div className="program-footer"><span>Also working across</span><strong>Social support</strong><i /><strong>Capacity building</strong><i /><strong>Advocacy &amp; partnerships</strong><i /><strong>Research &amp; learning</strong></div>
           </div>
         </section>
