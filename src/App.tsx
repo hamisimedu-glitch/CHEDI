@@ -170,6 +170,15 @@ function App() {
     setSubmitted(true);
   };
 
+  const openStaffDashboard = async () => {
+    setModal('admin');
+    if (session) {
+      setSession(null);
+      setAccountRole(null);
+      await supabase.auth.signOut();
+    }
+  };
+
   if (isLoading) return <div className="site-loader" role="status" aria-label="Loading CHEDI"><img src="/CHEDI%20LOGO.png" alt="" /><span /></div>;
 
   return (
@@ -232,7 +241,7 @@ function App() {
         <section className="cta-section"><div className="container cta-inner"><div><p className="eyebrow light"><span /> You can be part of this</p><h2>Hope is a practice.<br /><em>Let’s practice it together.</em></h2></div><div className="cta-actions"><button className="button button-orange" onClick={() => setModal('donate')}>Give with purpose <HeartHandshake size={18} /></button><button className="button button-outline" onClick={() => setModal('volunteer')}>Join our movement <UsersRound size={18} /></button></div></div></section>
       </main>
 
-      <footer className="footer" id="contact"><div className="container footer-grid"><div><Logo /><p className="footer-motto">Giving back with compassion,<br />health and hope.</p><div className="socials"><a href="https://www.facebook.com/chedifoundation" target="_blank" rel="noreferrer" aria-label="Facebook"><Facebook size={16} /></a><a href="https://www.instagram.com/chedifoundation" target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={16} /></a><a href="https://www.tiktok.com/@chedifoundation" target="_blank" rel="noreferrer" aria-label="TikTok"><Music2 size={16} /></a><a href="https://www.youtube.com/@chedifoundation" target="_blank" rel="noreferrer" aria-label="YouTube"><Youtube size={16} /></a></div></div><div><h4>Explore</h4><a href="#who-we-are">Who we are</a><a href="#programs">Our work</a><a href="#impact">Our impact</a><a href="#news">News &amp; stories</a></div><div><h4>Get involved</h4><button onClick={() => setModal('volunteer')}>Volunteer with us</button><button onClick={() => setModal('partner')}>Become a partner</button><button onClick={() => setModal('donate')}>Make a donation</button><button onClick={() => setModal('admin')}>Staff dashboard</button></div><div><h4>Say hello</h4><a href="mailto:chedifoundation8@gmail.com"><Mail size={15} /> chedifoundation8@gmail.com</a><a href="tel:+254704827013"><Phone size={15} /> 0704 827 013</a><p><MapPin size={15} /> Kibera, Nairobi<br />Kenya</p><p className="member-note">15 members: 6 community health promoters and 9 community members (youths).</p></div></div><div className="container footer-bottom"><span>© 2026 CHEDI. Community, dignity, always.</span><span>Privacy &amp; safeguarding</span></div></footer>
+      <footer className="footer" id="contact"><div className="container footer-grid"><div><Logo /><p className="footer-motto">Giving back with compassion,<br />health and hope.</p><div className="socials"><a href="https://www.facebook.com/chedifoundation" target="_blank" rel="noreferrer" aria-label="Facebook"><Facebook size={16} /></a><a href="https://www.instagram.com/chedifoundation" target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={16} /></a><a href="https://www.tiktok.com/@chedifoundation" target="_blank" rel="noreferrer" aria-label="TikTok"><Music2 size={16} /></a><a href="https://www.youtube.com/@chedifoundation" target="_blank" rel="noreferrer" aria-label="YouTube"><Youtube size={16} /></a></div></div><div><h4>Explore</h4><a href="#who-we-are">Who we are</a><a href="#programs">Our work</a><a href="#impact">Our impact</a><a href="#news">News &amp; stories</a></div><div><h4>Get involved</h4><button onClick={() => setModal('volunteer')}>Volunteer with us</button><button onClick={() => setModal('partner')}>Become a partner</button><button onClick={() => setModal('donate')}>Make a donation</button><button onClick={openStaffDashboard}>Staff dashboard</button></div><div><h4>Say hello</h4><a href="mailto:chedifoundation8@gmail.com"><Mail size={15} /> chedifoundation8@gmail.com</a><a href="tel:+254704827013"><Phone size={15} /> 0704 827 013</a><p><MapPin size={15} /> Kibera, Nairobi<br />Kenya</p><p className="member-note">15 members: 6 community health promoters and 9 community members (youths).</p></div></div><div className="container footer-bottom"><span>© 2026 CHEDI. Community, dignity, always.</span><span>Privacy &amp; safeguarding</span></div></footer>
 
       {modal && modal !== 'admin' && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeModal(); }}><div className="modal" role="dialog" aria-modal="true">
         <button className="modal-close" onClick={closeModal} aria-label="Close"><X size={20} /></button>
