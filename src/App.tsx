@@ -112,7 +112,8 @@ function App() {
     if (!session) { setAccountRole(null); setAccountRoleError(''); return; }
     const loadAccountRole = async () => {
       if (session.user.email?.toLowerCase() === 'chedifoundation8@gmail.com') {
-        await supabase.rpc('claim_chedi_admin');
+        const { error: claimError } = await supabase.rpc('claim_chedi_admin');
+        if (claimError) { setAccountRoleError('Apply the latest admin migration in Supabase, then sign in again.'); return; }
       }
       const { data, error } = await supabase.rpc('get_my_role');
       setAccountRole(data === 'admin' || data === 'staff' ? data : null);

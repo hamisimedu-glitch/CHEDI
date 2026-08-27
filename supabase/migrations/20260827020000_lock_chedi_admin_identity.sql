@@ -47,6 +47,19 @@ $$;
 REVOKE ALL ON FUNCTION public.is_chedi_admin_email() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_chedi_admin_email() TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role FROM public.admin_users WHERE user_id = auth.uid();
+$$;
+
+REVOKE ALL ON FUNCTION public.get_my_role() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_my_role() TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.claim_chedi_admin()
 RETURNS boolean
 LANGUAGE plpgsql
