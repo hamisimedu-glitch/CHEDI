@@ -91,6 +91,7 @@ const GALLERY_CATEGORIES = ['Community', 'Health', 'Environment', 'Education', '
 const APP_STATUSES = ['new', 'reviewing', 'contacted', 'closed'];
 const MSG_STATUSES = ['new', 'read', 'replied', 'closed'];
 const DONATION_STATUSES = ['pledged', 'paid', 'cancelled'];
+const CHEDI_ADMIN_EMAIL = 'chedifoundation8@gmail.com';
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 const formatDateTime = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -825,29 +826,44 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
     setError('');
     setLoading(true);
 
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password.trim();
+
     if (mode === 'request') {
-      const { data, error: signUpError } = await supabase.auth.signUp({ email: email.trim(), password });
-      if (signUpError) { setError(signUpError.message); setLoading(false); return; }
-      if (data.user && data.session) {
-        const { error: requestError } = await supabase.from('staff_requests').insert({ user_id: data.user.id, email: email.trim(), display_name: displayName.trim() || 'CHEDI staff' });
-        if (requestError) { setError(requestError.message); setLoading(false); return; }
-        await supabase.auth.signOut();
-        setError('Request submitted. The administrator must approve your staff access before you can sign in.');
-        setMode('login');
-      } else {
-        setError('Account created. Confirm your email, then ask the administrator to approve your staff access.');
-        setMode('login');
-      }
-    } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (signInError) { setError(signInError.message); setLoading(false); return; }
-      if (email.trim().toLowerCase() === 'chedifoundation8@gmail.com') {
-        const { error: claimError } = await supabase.rpc('claim_chedi_admin');
-        if (claimError) { setError('Admin access is not configured yet. Apply the latest Supabase migrations, then sign in again.'); setLoading(false); return; }
-      }
-      onSuccess();
+      setError('This dashboard is restricted to the CHEDI administrator account only. Please sign in with the approved admin email.');
+      setLoading(false);
       return;
     }
+
+    if (normalizedEmail !== CHEDI_ADMIN_EMAIL) {
+      setError('Only the CHEDI administrator account can access this dashboard.');
+      setLoading(false);
+      return;
+    }
+
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password: normalizedPassword });
+    if (signInError) {
+      setError(signInError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (data.user?.email?.trim().toLowerCase() !== CHEDI_ADMIN_EMAIL) {
+      await supabase.auth.signOut();
+      setError('Access denied. Only the CHEDI administrator account can sign in here.');
+      setLoading(false);
+      return;
+    }
+
+    const { error: claimError } = await supabase.rpc('claim_chedi_admin');
+    if (claimError) {
+      await supabase.auth.signOut();
+      setError('Admin access is not configured yet. Apply the latest Supabase migrations, then sign in again.');
+      setLoading(false);
+      return;
+    }
+
+    onSuccess();
     setLoading(false);
   };
 
@@ -860,8 +876,8 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
         <h2>{mode === 'login' ? <>Welcome <em>back.</em></> : <>Request <em>access.</em></>}</h2>
         <p className="admin-login-sub">
           {mode === 'login'
-            ? 'Only the CHEDI administrator and approved staff can sign in here.'
-            : 'Create a staff account request. The administrator will review and approve it.'}
+            ? 'Only the CHEDI administrator account can access this dashboard.'
+            : 'This dashboard is restricted to the designated CHEDI administrator account.'}
         </p>
         <form onSubmit={handleSubmit} className="admin-login-form">
           {mode === 'request' && <label>Your name
@@ -878,8 +894,8 @@ export function AdminLogin({ onClose, onSuccess }: AdminLoginProps) {
             {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Request staff access'}
           </button>
         </form>
-        <button className="admin-login-toggle" onClick={() => { setMode(mode === 'login' ? 'request' : 'login'); setError(''); }}>
-          {mode === 'login' ? 'Need staff access? Submit a request' : 'Already have an account? Sign in'}
+        <button className="admin-login-toggle" onClick={() => { setMode('login'); setError(''); }}>
+          Return to admin sign in
         </button>
       </div>
     </div>

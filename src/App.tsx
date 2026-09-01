@@ -39,6 +39,9 @@ type Program = {
 
 type ModalType = 'donate' | 'volunteer' | 'partner' | 'contact' | 'admin' | null;
 
+const CHEDI_ADMIN_EMAIL = 'chedifoundation8@gmail.com';
+const CHEDI_YOUTUBE_URL = 'https://www.youtube.com/@chedifoundation';
+
 const heroImage = '/CHEDI3.jpg';
 const communityImage = '/CHEDI1.jpg';
 const cleanUpImage = '/CHEDI2.jpg';
@@ -110,18 +113,24 @@ function App() {
 
   useEffect(() => {
     if (!session) { setAccountRole(null); setAccountRoleError(''); return; }
+
+    const email = session.user.email?.trim().toLowerCase() ?? '';
+    if (email !== CHEDI_ADMIN_EMAIL) {
+      setAccountRole(null);
+      setAccountRoleError('Only the CHEDI administrator account can access the dashboard.');
+      return;
+    }
+
     const loadAccountRole = async () => {
-      if (session.user.email?.toLowerCase() === 'chedifoundation8@gmail.com') {
-        const { error: claimError } = await supabase.rpc('claim_chedi_admin');
-        if (claimError) { setAccountRoleError('Apply the latest admin migration in Supabase, then sign in again.'); return; }
-        setAccountRole('admin');
-        setAccountRoleError('');
+      const { error: claimError } = await supabase.rpc('claim_chedi_admin');
+      if (claimError) {
+        setAccountRoleError('Apply the latest admin migration in Supabase, then sign in again.');
         return;
       }
-      const { data, error } = await supabase.rpc('get_my_role');
-      setAccountRole(data === 'admin' || data === 'staff' ? data : null);
-      setAccountRoleError(error ? 'Apply the latest Supabase migrations, then sign in again.' : '');
+      setAccountRole('admin');
+      setAccountRoleError('');
     };
+
     loadAccountRole();
   }, [session]);
 
@@ -206,7 +215,7 @@ function App() {
             <p className="eyebrow light"><span /> Community-led. Dignity-first.</p>
             <h1>Health, hope &amp;<br /><em>dignity</em> for all.</h1>
             <p className="hero-copy">We are a grassroots community organization working with residents of Kibera to build healthier, safer and more hopeful futures—together.</p>
-            <div className="hero-actions"><a className="button button-primary" href="#who-we-are">Discover our work <ArrowRight size={18} /></a><button className="play-button" onClick={() => setModal('contact')}><span><Play size={15} fill="currentColor" /></span> See our story</button></div>
+            <div className="hero-actions"><a className="button button-primary" href="#who-we-are">Discover our work <ArrowRight size={18} /></a><a className="play-button" href={CHEDI_YOUTUBE_URL} target="_blank" rel="noreferrer"><span><Play size={15} fill="currentColor" /></span> See our story</a></div>
           </div>
           <div className="hero-note"><span className="hero-note-line" /><strong>{String(heroSlide + 1).padStart(2, '0')}</strong><span>of {String(heroSlides.length).padStart(2, '0')} &nbsp; / &nbsp; {heroSlides[heroSlide].label}</span><div className="hero-controls"><button onClick={() => setHeroSlide((heroSlide - 1 + heroSlides.length) % heroSlides.length)} aria-label="Previous homepage image"><ChevronLeft size={17} /></button><button onClick={() => setHeroSlide((heroSlide + 1) % heroSlides.length)} aria-label="Next homepage image"><ChevronRight size={17} /></button></div></div>
           <div className="hero-dots" role="tablist" aria-label="Homepage images">{heroSlides.map((slide, index) => <button key={slide.image} className={heroSlide === index ? 'active' : ''} onClick={() => setHeroSlide(index)} role="tab" aria-label={`Show image ${index + 1}: ${slide.label}`} aria-selected={heroSlide === index} />)}</div>
